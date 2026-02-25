@@ -182,7 +182,9 @@ export class ChatAgent extends AIChatAgent<Env> {
             : [];
 
         let systemContent = `You are Sage, a brilliant AI research assistant on Cloudflare.
-Use your tools to answer questions. Always call searchWeb for factual/current info questions.
+Use your tools to answer questions. Use searchWeb only when the user explicitly asks for current, live, or real-time information.
+Do not call searchWeb if the question can be answered from general knowledge.
+Never call the same tool more than once per user message.
 Call getUserInfo when asked about timezone, location, locale, or browser info.
 Call setReminder when asked to set a reminder.
 Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.`;
@@ -218,7 +220,7 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
                         messages: stepMessages,
                         tools: TOOLS_SCHEMA,
                         stream: false,
-                        max_tokens: 1024,
+                        max_tokens: 512,
                     });
 
                     const result = response as { response?: string; tool_calls?: WorkersAIToolCall[] };
@@ -233,6 +235,11 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
 
                         for (const tc of pendingToolCalls) {
                             const toolName = tc.function.name;
+
+                            if (calledToolNames.size >= 1) {
+                                pendingToolCalls = [];
+                                break;
+                            }
 
                             if (calledToolNames.has(toolName)) {
                                 // Llama 3 amnesia: it's trying to call the same tool again. Force break.
@@ -296,26 +303,50 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
                             }
 
                             if (toolName === "searchWeb") {
+
+                                // 🔒 GUARD: Only allow search if user explicitly requests live/current info
+                                const lastUserMessage = historyMessages
+                                    .filter(m => m.role === "user")
+                                    .slice(-1)[0]?.content?.toLowerCase() ?? "";
+
+                                const triggerWords = ["search", "latest", "current", "today", "news", "real-time"];
+
+                                const shouldSearch = triggerWords.some(word =>
+                                    lastUserMessage.includes(word)
+                                );
+
+                                if (!shouldSearch) {
+                                    console.warn("Blocked unnecessary searchWeb call.");
+                                    continue; // 🚫 skip execution
+                                }
+
                                 const query = (inputArgs.query as string) ?? "";
                                 const searchResult = await executeSearchWeb(query);
+
                                 writer.write({
                                     type: "tool-output-available",
                                     toolCallId,
                                     output: JSON.parse(searchResult),
                                 });
+
                                 stepMessages.push({
                                     role: "tool",
                                     tool_call_id: toolCallId,
                                     name: toolName,
                                     content: searchResult,
                                 });
-                                toolResults.push({ toolCallId, toolName, result: JSON.parse(searchResult) });
+
+                                toolResults.push({
+                                    toolCallId,
+                                    toolName,
+                                    result: JSON.parse(searchResult),
+                                });
                             }
                         }
 
-                        if (pendingToolCalls.length === 0) {
+                        if (pendingToolCalls.length > 1) {
                             // We forcefully broke out of the tool loop due to amnesia
-                            continue;
+                            pendingToolCalls = [pendingToolCalls[0]];
                         }
 
                         // Continue to next pass (up to 2) so AI can see the tool results
