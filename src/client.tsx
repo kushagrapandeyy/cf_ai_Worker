@@ -217,6 +217,7 @@ function Chat() {
         e.preventDefault();
         const text = inputValue.trim();
         if (!text || isStreaming) return;
+
         sendMessage({ text });
         setInputValue("");
         inputRef.current?.focus();
@@ -244,11 +245,8 @@ function Chat() {
                         <button
                             key={p}
                             className="suggested-prompt"
-                            onClick={() => {
-                                if (!isStreaming) {
-                                    sendMessage({ text: p });
-                                }
-                            }}
+                            disabled={isStreaming}
+                            onClick={() => sendMessage({ text: p })}
                         >
                             {p}
                         </button>

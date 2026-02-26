@@ -158,14 +158,19 @@ export class ChatAgent extends AIChatAgent<Env> {
 
     async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
         const now = Date.now();
-        if (this._isGenerating || now - this._lastRequestTime < 3000) {
+        if (this._isGenerating) {
             console.warn("Blocked concurrent or rapid request. Rate limiting to protect APIs.");
             const stream = createUIMessageStream({
                 execute: async ({ writer }) => {
-                    const msgId = `msg-${Date.now()}`;
-                    writer.write({ type: "text-start", id: msgId });
-                    writer.write({ type: "text-delta", delta: "Rate limit: Please wait a few seconds before sending another message.", id: msgId });
-                    writer.write({ type: "text-end", id: msgId });
+                    try {
+                        const msgId = `msg-${Date.now()}`;
+                        writer.write({ type: "text-start", id: msgId });
+                        writer.write({ type: "text-delta", delta: "Rate limit: Please wait a few seconds before sending another message.", id: msgId });
+                        writer.write({ type: "text-end", id: msgId });
+                    }
+                    finally {
+                        this._isGenerating = false;
+                    }
                 }
             });
             return createUIMessageStreamResponse({ stream });
