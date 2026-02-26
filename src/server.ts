@@ -115,21 +115,26 @@ function uiMessagesToWorkersAI(messages: UIMessage[]): WorkersAIMessage[] {
             }
         } else if (msg.role === "assistant") {
             const text = textParts.map((p) => (p as { text: string }).text).join("\n");
-            if (text) out.push({ role: "assistant", content: text });
             const calls = toolParts.filter((t) =>
                 t.state === "output-available" || t.state === "approval-required" || t.state === "rejected"
             );
+
+            const assistantMsg: WorkersAIMessage = {
+                role: "assistant",
+                content: text || "",
+            };
+
             if (calls.length > 0) {
-                out.push({
-                    role: "assistant",
-                    content: "",
-                    tool_calls: calls.map((t) => ({
-                        id: t.toolCallId,
-                        type: "function",
-                        function: { name: t.toolName || "unknown", arguments: JSON.stringify(t.input ?? {}) },
-                    })),
-                });
+                assistantMsg.tool_calls = calls.map((t) => ({
+                    id: t.toolCallId,
+                    type: "function",
+                    function: {
+                        name: t.toolName || "unknown",
+                        arguments: JSON.stringify(t.input ?? {}),
+                    },
+                }));
             }
+            out.push(assistantMsg);
         }
     }
     return out;
@@ -159,21 +164,8 @@ export class ChatAgent extends AIChatAgent<Env> {
     async onChatMessage(onFinish: StreamTextOnFinishCallback<ToolSet>) {
         const now = Date.now();
         if (this._isGenerating) {
-            console.warn("Blocked concurrent or rapid request. Rate limiting to protect APIs.");
-            const stream = createUIMessageStream({
-                execute: async ({ writer }) => {
-                    try {
-                        const msgId = `msg-${Date.now()}`;
-                        writer.write({ type: "text-start", id: msgId });
-                        writer.write({ type: "text-delta", delta: "Rate limit: Please wait a few seconds before sending another message.", id: msgId });
-                        writer.write({ type: "text-end", id: msgId });
-                    }
-                    finally {
-                        this._isGenerating = false;
-                    }
-                }
-            });
-            return createUIMessageStreamResponse({ stream });
+            console.warn("Generating flag is true, but allowing request to prevent stuck state.");
+            // this._isGenerating = false; // Optional: force reset
         }
 
         this._isGenerating = true;
@@ -213,6 +205,7 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
                 const calledToolNames = new Set<string>();
 
                 for (let step = 0; step < 2; step++) {
+                    console.log(`AI pass ${step} started. messages count: ${stepMessages.length}`);
                     const response = await (this.env.AI as unknown as {
                         run: (model: string, options: {
                             messages: WorkersAIMessage[];
@@ -225,6 +218,9 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
                         tools: TOOLS_SCHEMA,
                         stream: false,
                         max_tokens: 512,
+                    }).catch(err => {
+                        console.error("AI.run failed:", err);
+                        throw err;
                     });
 
                     const result = response as { response?: string; tool_calls?: WorkersAIToolCall[] };
