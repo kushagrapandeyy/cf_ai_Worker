@@ -224,20 +224,20 @@ function Chat() {
     }
 
     const suggestedPrompts = [
-        "Search for the latest on AI agents",
-        "What timezone am I in?",
-        "Remind me to take a break in 60 seconds",
-        "Explain how Cloudflare Durable Objects work",
+        "What's the latest in AI and agentic automation?",
+        "Check my current browser environment and timezone",
+        "Set a professional reminder for a sync in 10 minutes",
+        "How can Cloudflare Workers optimize my business logic?",
     ];
 
     return (
         <div className="app">
             <aside className="sidebar">
                 <div className="sidebar-logo">
-                    <span className="logo-glyph">✦</span>
-                    <span className="logo-name">Sage</span>
+                    <span className="logo-glyph">✧</span>
+                    <span className="logo-name">Sage AI</span>
                 </div>
-                <p className="sidebar-tagline">AI Research Assistant</p>
+                <p className="sidebar-tagline">Enterprise Workspace Assistant</p>
                 <div className="sidebar-divider" />
                 <p className="sidebar-section-label">Try asking</p>
                 <div className="suggested-prompts">
@@ -269,9 +269,9 @@ function Chat() {
                 <div className="messages-area">
                     {messages.length === 0 ? (
                         <div className="empty-state">
-                            <div className="empty-icon">✦</div>
-                            <h2>Hello, I'm Sage</h2>
-                            <p>Your AI research assistant on Cloudflare. Ask me anything, I can search the web, check your timezone, and even set reminders.</p>
+                            <div className="empty-icon">✧</div>
+                            <h2>Welcome to Sage AI</h2>
+                            <p>Your premium workspace assistant. I can help with research, scheduling, and environment awareness to keep your workflow seamless.</p>
                         </div>
                     ) : (
                         messages.map((msg) => (

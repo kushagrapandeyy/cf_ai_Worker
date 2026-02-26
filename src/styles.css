@@ -10,8 +10,8 @@
   --border: rgba(255, 255, 255, 0.07);
   --border-glow: rgba(139, 92, 246, 0.35);
 
-  --accent-1: #8b5cf6;
-  --accent-2: #06b6d4;
+  --accent-1: #c084fc;
+  --accent-2: #22d3ee;
   --accent-grad: linear-gradient(135deg, var(--accent-1), var(--accent-2));
 
   --text-primary: #f1f3f9;
@@ -263,7 +263,7 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 16px;
-  filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));
+  filter: drop-shadow(0 0 30px rgba(192, 132, 252, 0.4));
 }
 
 .empty-state h2 {

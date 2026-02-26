@@ -186,16 +186,15 @@ export class ChatAgent extends AIChatAgent<Env> {
             ? (stateObj as { reminders: string[] }).reminders
             : [];
 
-        let systemContent = `You are Sage, a brilliant AI research assistant on Cloudflare.
-Use your tools to answer questions. Use searchWeb only when the user explicitly asks for current, live, or real-time information.
-Do not call searchWeb if the question can be answered from general knowledge.
-Never call the same tool more than once per user message.
-Call getUserInfo when asked about timezone, location, locale, or browser info.
-Call setReminder when asked to set a reminder.
+        let systemContent = `You are Sage, a premium AI Workspace Assistant designed for professional business environments.
+Your goal is to provide fast, accurate, and highly professional assistance to clients and team members.
+Be proactive, cordial, and precise. Use your tools to enhance your capabilities.
+Use searchWeb when the user requires external real-time data, but prioritize internal context if available.
+Always maintain a helpful and sophisticated tone.
 Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.`;
 
         if (pendingReminders.length > 0) {
-            systemContent += `\n\nACTIVE REMINDERS:\n${pendingReminders.join("\n")}\nInform the user.`;
+            systemContent += `\n\nACTIVE REMINDERS:\n${pendingReminders.join("\n")}\nPlease inform the user about these reminders in a professional manner.`;
             this.setState({ ...stateObj, reminders: [] });
         }
 
@@ -272,12 +271,16 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
                             });
 
                             if (toolName === "getUserInfo") {
+                                // Instead of returning and killing the stream, we just notify the client.
+                                // The client hook useAgentChat's onToolCall will handle this.
                                 writer.write({
                                     type: "tool-output-available",
                                     toolCallId,
                                     output: { pending: "Waiting for browser..." },
                                 });
-                                return;
+                                // We don't break/return here; we want the AI to potentially acknowledge it
+                                // or wait for the next pass if the loop permits.
+                                continue;
                             }
 
                             if (toolName === "setReminder") {
@@ -320,9 +323,16 @@ Today: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeri
                                     lastUserMessage.includes(word)
                                 );
 
-                                if (!shouldSearch) {
-                                    console.warn("Blocked unnecessary searchWeb call.");
-                                    continue; // 🚫 skip execution
+                                if (!shouldSearch && inputArgs.query) {
+                                    console.warn("Blocked likely redundant searchWeb call.");
+                                    // Instead of just continuing, let's inform the AI so it doesn't get confused
+                                    stepMessages.push({
+                                        role: "tool",
+                                        tool_call_id: toolCallId,
+                                        name: toolName,
+                                        content: JSON.stringify({ error: "Search blocked: too frequent or redundant. Use existing knowledge if possible." }),
+                                    });
+                                    continue;
                                 }
 
                                 const query = (inputArgs.query as string) ?? "";
