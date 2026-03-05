@@ -9,7 +9,7 @@ import { z } from "zod";
 
 interface Env {
     AI: Ai;
-    ChatAgent: DurableObjectNamespace;
+    ChatAgent: DurableObjectNamespace<ChatAgent>;
     ASSETS: Fetcher;
 }
 
