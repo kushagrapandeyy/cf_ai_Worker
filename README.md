@@ -7,7 +7,7 @@ Sage AI is a high-performance, production-grade research and workspace assistant
 - **Stateful Intelligence**: Durable Object-backed conversation history for persistent, context-aware assistance.
 - **Enterprise Speed**: Zero-latency global routing across Cloudflare's edge network.
 - **Multi-Tool Integration**:
-    - 🔍 **Global البحث (Search)**: Real-time intelligence via DuckDuckGo API.
+    - 🔍 **Global Search**: Real-time intelligence via DuckDuckGo API.
     - ⏰ **Smart Reminders**: Precision scheduling using Durable Object Alarms.
     - 🌐 **Env Awareness**: Browser-level context (timezone, locale) for personalized help.
 - **Premium Aesthetics**: High-end UX with glassmorphic UI, fluid animations, and dark-mode elegance.
