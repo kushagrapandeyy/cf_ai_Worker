@@ -1,4 +1,4 @@
-# Sage AI — Premium Enterprise Workspace Assistant
+# Sage AI - Premium Enterprise Workspace Assistant
 
 Sage AI is a high-performance, production-grade research and workspace assistant built on Cloudflare's global network. It leverages Durable Objects for stateful context and Cloudflare AI (Llama 3.1) for sophisticated enterprise-level reasoning.
 
